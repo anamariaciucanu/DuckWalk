@@ -6,20 +6,20 @@ import math
 pi = math.pi
 minValue = 0.1
 maxValue = 5
-animationStart = 0
+animationStart = 1
 animationEnd = 120
 fps=24
 amplitude = 1.0
 rotationAmplitude = 10.0
 speed = 1.0
-weight = 0.1
+weight = 0.5
 direction = 1.0
 #Ellipse axes
 asq = 3.0
 bsq = 1
 
 widgets = {}
-controllers = ['R_IK_CTRL', 'L_IK_CTRL', 'R_Toe_CTRL', 'L_Toe_CTRL', 'Spine_CTRL']
+controllers = ['R_IK_CTRL', 'L_IK_CTRL', 'R_Toe_CTRL', 'L_Toe_CTRL', 'Spine_CTRL', 'Spine1_CTRL', 'Spine2_CTRL', 'Spine7_CTRL']
 
 def resetParameters():          
     #Reset transformations
@@ -36,42 +36,70 @@ def generateWalk():
     halfFPS = fps/2
     angleCut = 2*pi/fps
     for i in range(animationStart, animationEnd, fps):
-        for j in range (0, fps, 3):
+        for j in range (0, fps, 2):
             if (i + j < animationEnd):
                 teta = (i + j) * angleCut
                 
            #Feet   
-                currentFootTranslationX = weight * math.cos(speed * teta)                        
-                currentFootTranslationY = amplitude * math.sin(speed * teta) / asq
-                currentFootTranslationZ = -amplitude * math.cos(speed * teta) / bsq
+                currentLeftFootTranslationX = weight * math.fabs(math.sin(speed * 0.5 * teta))   
+                currentRightFootTranslationX = currentLeftFootTranslationX - weight                
+                currentFootTranslationY = -amplitude * math.sin(speed * teta) / asq
+                currentFootTranslationZ = amplitude * math.cos(speed * teta) / bsq
+                currentLeftFootRotationX = -rotationAmplitude * math.sin(speed * teta)
                 if (currentFootTranslationY < 0):
                     currentFootTranslationY = 0
+                if (currentLeftFootRotationX < 0):
+                    currentLeftFootRotationX = 0  
+                    
+                currentLeftToeTranslationY = -currentFootTranslationY / 3
+                currentLeftFootTranslationZ = currentLeftToeTranslationY / 5
+                                  
+               
              
             #Spine    
-                currentSpineTranslationX = currentFootTranslationX 
+                currentSpineTranslationX = currentLeftFootTranslationX 
                 currentSpineTranslationY = -amplitude * math.sin(2 * speed * teta) / asq
-                currentSpineRotationY = rotationAmplitude * math.cos(speed * teta)
+                currentSpineRotationY = -direction*rotationAmplitude * math.cos(speed * teta)
                 currentSpineRotationZ = currentSpineRotationY / 3.0
+                currentTailRotationY = currentSpineRotationY / 2.0
+                
+            #Neck
+                currentNeckTranslationY = -weight * currentSpineTranslationY 
+                currentNeckRotationY = -currentSpineRotationY
+                currentNeckTranslationX = currentNeckRotationY / 40
+                currentSpine1RotationZ = currentNeckRotationY / 3
                 
             #Frame number
                 tLeft = i + j
                 tRight = (i + j + halfFPS) % animationEnd        
     
             #Left side
-                cmds.setAttr('L_IK_CTRL.translateX', currentFootTranslationX)
+                cmds.setAttr('L_IK_CTRL.translateX', currentLeftFootTranslationX)
                 cmds.setKeyframe( 'L_IK_CTRL', attribute='translateX', t=tLeft )           
                 cmds.setAttr('L_IK_CTRL.translateY', currentFootTranslationY)
                 cmds.setKeyframe( 'L_IK_CTRL', attribute='translateY', t=tLeft )
                 cmds.setAttr('L_IK_CTRL.translateZ', currentFootTranslationZ)
                 cmds.setKeyframe( 'L_IK_CTRL', attribute='translateZ', t=tLeft )   
+                cmds.setAttr('L_IK_CTRL.rotateX', currentLeftFootRotationX)
+                cmds.setKeyframe( 'L_IK_CTRL', attribute='rotateX', t=tLeft ) 
+                cmds.setAttr('L_Toe_CTRL.translateY', currentLeftToeTranslationY)
+                cmds.setKeyframe( 'L_Toe_CTRL', attribute='translateY', t=tLeft ) 
+                cmds.setAttr('L_Toe_CTRL.translateZ', currentLeftFootTranslationZ)
+                cmds.setKeyframe( 'L_Toe_CTRL', attribute='translateZ', t=tLeft ) 
                 
             #Right side    
-                cmds.setAttr('R_IK_CTRL.translateX', -currentFootTranslationX)
-                cmds.setKeyframe( 'R_IK_CTRL', attribute='translateX', t=tRight )
+                cmds.setAttr('R_IK_CTRL.translateX', currentRightFootTranslationX)
+                cmds.setKeyframe( 'R_IK_CTRL', attribute='translateX', t=tLeft )
                 cmds.setAttr('R_IK_CTRL.translateY', currentFootTranslationY)
                 cmds.setKeyframe( 'R_IK_CTRL', attribute='translateY', t=tRight )
                 cmds.setAttr('R_IK_CTRL.translateZ', currentFootTranslationZ)
-                cmds.setKeyframe( 'R_IK_CTRL', attribute='translateZ', t=tRight )   
+                cmds.setKeyframe( 'R_IK_CTRL', attribute='translateZ', t=tRight )  
+                cmds.setAttr('R_IK_CTRL.rotateX', currentLeftFootRotationX)
+                cmds.setKeyframe( 'R_IK_CTRL', attribute='rotateX', t=tRight ) 
+                cmds.setAttr('R_Toe_CTRL.translateY', currentLeftToeTranslationY)
+                cmds.setKeyframe( 'R_Toe_CTRL', attribute='translateY', t=tRight ) 
+                cmds.setAttr('R_Toe_CTRL.translateZ', currentLeftFootTranslationZ)
+                cmds.setKeyframe( 'R_Toe_CTRL', attribute='translateZ', t=tRight ) 
                 
             #Spine
                 cmds.setAttr('Spine_CTRL.translateX', currentSpineTranslationX)
@@ -81,7 +109,19 @@ def generateWalk():
                 cmds.setAttr('Spine_CTRL.rotateY',  currentSpineRotationY)
                 cmds.setKeyframe( 'Spine_CTRL', attribute='rotateY', t=tLeft) 
                 cmds.setAttr('Spine_CTRL.rotateZ',  currentSpineRotationZ)
-                cmds.setKeyframe( 'Spine_CTRL', attribute='rotateZ', t=tLeft) 
+                cmds.setKeyframe( 'Spine_CTRL', attribute='rotateZ', t=tLeft)                 
+                cmds.setAttr('Spine7_CTRL.rotateY',  currentTailRotationY)
+                cmds.setKeyframe( 'Spine7_CTRL', attribute='rotateY', t=tLeft) 
+                
+            #Neck
+                cmds.setAttr('Spine2_CTRL.translateX',  currentNeckTranslationX)
+                cmds.setKeyframe( 'Spine2_CTRL', attribute='translateX', t=tLeft) 
+                cmds.setAttr('Spine2_CTRL.translateY',  currentNeckTranslationY)
+                cmds.setKeyframe( 'Spine2_CTRL', attribute='translateY', t=tLeft) 
+                cmds.setAttr('Spine2_CTRL.rotateY',  currentNeckRotationY)
+                cmds.setKeyframe( 'Spine2_CTRL', attribute='rotateY', t=tLeft) 
+                cmds.setAttr('Spine1_CTRL.rotateZ',  currentSpine1RotationZ)
+                cmds.setKeyframe( 'Spine1_CTRL', attribute='rotateZ', t=tLeft) 
                 
             else:
                 break
