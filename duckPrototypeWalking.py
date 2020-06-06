@@ -15,7 +15,7 @@ asq = 3.0
 bsq = 1
 
 widgets = {}
-controllers = ['R_IK_CTRL', 'L_IK_CTRL', 'R_Toe_CTRL', 'L_Toe_CTRL', 'Spine_CTRL', 'Spine1_CTRL', 'Spine2_CTRL', 'Spine7_CTRL']
+controllers = ['R_IK_CTRL', 'L_IK_CTRL', 'R_Toe_CTRL', 'L_Toe_CTRL', 'Spine_CTRL', 'Spine1_CTRL', 'Spine2_CTRL', 'Spine7_CTRL', 'Duck_Master_CTRL']
 
 def resetParameters():          
     #Reset transformations
@@ -32,8 +32,8 @@ def generateWalk():
     halfFPS = fps/2
     angleCut = 2*pi/fps
     weightCosValue = math.cos(weight*pi)
-    print 'COS VALUE'
-    print weightCosValue
+    zWalking = 0
+    xWalking = 0
 
     for i in range(animationStart, animationEnd, fps):
         for j in range (0, fps, 3):
@@ -68,6 +68,11 @@ def generateWalk():
                 currentNeckRotationY = -currentSpineRotationY 
                 currentNeckTranslationX = currentNeckRotationY / 40
                 currentSpine1RotationZ = currentNeckRotationY / 3.0
+                
+            #Master control
+                zWalking = zWalking + amplitude/2.0
+                xWalking = amplitude * direction * math.sin(speed * teta)
+                yWalkingRotation = rotationAmplitude * xWalking
                 
             #Frame number
                 tLeft = i + j
@@ -121,7 +126,15 @@ def generateWalk():
                 cmds.setAttr('Spine2_CTRL.rotateY',  currentNeckRotationY)
                 cmds.setKeyframe( 'Spine2_CTRL', attribute='rotateY', t=tLeft) 
                 cmds.setAttr('Spine1_CTRL.rotateZ',  currentSpine1RotationZ)
-                cmds.setKeyframe( 'Spine1_CTRL', attribute='rotateZ', t=tLeft) 
+                cmds.setKeyframe( 'Spine1_CTRL', attribute='rotateZ', t=tLeft)
+                
+            #Forward walking
+                cmds.setAttr('Duck_Master_CTRL.translateZ',  zWalking)
+                cmds.setKeyframe( 'Duck_Master_CTRL', attribute='translateZ', t=tLeft)       
+                cmds.setAttr('Duck_Master_CTRL.translateX',  xWalking)
+                cmds.setKeyframe( 'Duck_Master_CTRL', attribute='translateX', t=tLeft)      
+                cmds.setAttr('Duck_Master_CTRL.rotateY',  yWalkingRotation)
+                cmds.setKeyframe( 'Duck_Master_CTRL', attribute='rotateY', t=tLeft)      
                 
             else:
                 break
@@ -175,7 +188,7 @@ def normalizeGUIValues():
     weight = (weight - minValue)/minMaxDiff1   
     global direction
     direction = (direction - minValue)/minMaxDiff1
-      
+     
     
                       
 def generateBehaviour():
