@@ -13,6 +13,7 @@ fps=24
 #Ellipse axes
 asq = 3.0
 bsq = 1
+extraAmpFactor = 20
 
 widgets = {}
 controllers = ['R_IK_CTRL', 'L_IK_CTRL', 'R_Toe_CTRL', 'L_Toe_CTRL', 'Spine_CTRL', 'Spine1_CTRL', 'Spine2_CTRL', 'Spine7_CTRL', 'Duck_Master_CTRL']
@@ -30,10 +31,9 @@ def resetParameters():
             
 def generateWalk():
     halfFPS = fps/2
-    angleCut = 2*pi/fps
+    angleCut = speed * 2*pi/fps
     weightCosValue = math.cos(weight*pi)
     zWalking = 0
-    xWalking = 0
 
     for i in range(animationStart, animationEnd, fps):
         for j in range (0, fps, 3):
@@ -41,37 +41,36 @@ def generateWalk():
                 teta = (i + j) * angleCut
                 
            #Feet   
-                rotationAmplitude = amplitude * 20
-                currentLeftFootTranslationX = amplitude * math.fabs(math.sin(speed * 0.5 * teta))   
+                rotationAmplitude = amplitude * extraAmpFactor
+                currentLeftFootTranslationX = amplitude * math.fabs(math.sin(0.5 * teta))   
                 currentRightFootTranslationX = currentLeftFootTranslationX - amplitude                
-                currentFootTranslationY = -amplitude * math.sin(speed * teta) / asq
-                currentFootTranslationZ = amplitude * math.cos(speed * teta) / bsq
-                currentLeftFootRotationX = -rotationAmplitude * math.sin(speed * teta)
+                currentFootTranslationY = -amplitude * math.sin(teta) / asq
+                currentFootTranslationZ = amplitude * math.cos(teta) / bsq
+                currentLeftFootRotationX = -rotationAmplitude * math.sin(teta)
                 if (currentFootTranslationY < 0):
                     currentFootTranslationY = 0
                 if (currentLeftFootRotationX < 0):
                     currentLeftFootRotationX = 0  
                     
-                currentLeftToeTranslationY = -currentFootTranslationY / 3
-                currentLeftFootTranslationZ = currentLeftToeTranslationY / 5                                 
-               
+                currentLeftToeTranslationY = -currentFootTranslationY / asq
+                currentLeftFootTranslationZ = currentLeftToeTranslationY / asq                           
              
             #Spine    
-                currentSpineTranslationX = currentLeftFootTranslationX - amplitude/2.0                
-                currentSpineTranslationY = weightCosValue/2.0 + math.sin(2 * speed * teta) / asq
-                currentSpineRotationY = -direction * rotationAmplitude * math.cos(speed * teta)
+                currentSpineTranslationX = currentLeftFootTranslationX - amplitude / 2.0                
+                currentSpineTranslationY = weightCosValue / 2.0 + math.sin(2 * teta) / asq
+                currentSpineRotationY = -direction * rotationAmplitude * math.cos(teta)
                 currentSpineRotationZ = weight * currentSpineRotationY
                 currentTailRotationY = currentSpineRotationY / 2.0
                 
             #Neck
                 currentNeckTranslationY = -currentSpineTranslationY / 2.0
                 currentNeckRotationY = -currentSpineRotationY 
-                currentNeckTranslationX = currentNeckRotationY / 40
-                currentSpine1RotationZ = currentNeckRotationY / 3.0
+                currentNeckTranslationX = currentNeckRotationY / (extraAmpFactor * 2)
+                currentSpine1RotationZ = currentNeckRotationY / asq
                 
             #Master control
-                zWalking = zWalking + amplitude/2.0
-                xWalking = amplitude * direction * math.sin(speed * teta)
+                zWalking = zWalking + speed * amplitude / 2.0
+                xWalking = amplitude * direction * math.sin(teta)
                 yWalkingRotation = rotationAmplitude * xWalking
                 
             #Frame number
@@ -129,7 +128,7 @@ def generateWalk():
                 cmds.setKeyframe( 'Spine1_CTRL', attribute='rotateZ', t=tLeft)
                 
             #Forward walking
-                cmds.setAttr('Duck_Master_CTRL.translateZ',  zWalking)
+                cmds.setAttr('Duck_Master_CTRL.translateZ', zWalking)
                 cmds.setKeyframe( 'Duck_Master_CTRL', attribute='translateZ', t=tLeft)       
                 cmds.setAttr('Duck_Master_CTRL.translateX',  xWalking)
                 cmds.setKeyframe( 'Duck_Master_CTRL', attribute='translateX', t=tLeft)      
@@ -175,8 +174,9 @@ def normalizeGUIValues():
     minMaxDiff2 = minMaxDiff1/2.0
     global amplitude
     amplitude = (amplitude - minValue)/minMaxDiff2
-    #global speed
-    #speed = (speed - minValue)/minMaxDiff1
+    global speed        
+    speed = (speed - minValue)/minMaxDiff2
+
     global asq
     if (weight < maxValue/3):
         asq = 1
