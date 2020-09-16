@@ -5,6 +5,7 @@ import math
 pi = math.pi
 minValue = 0.0
 maxValue = 10.0
+speed = 1.0
 
 #Timing
 animationStart = 0
@@ -12,7 +13,7 @@ animationEnd = 120
 fps=24
 #Ellipse axes
 asq = 3.0
-bsq = 1
+bsq = 0.9
 extraAmpFactor = 20
 
 widgets = {}
@@ -33,6 +34,7 @@ def generateWalk():
     halfFPS = fps/2
     angleCut = speed * 2*pi/fps
     weightCosValue = math.cos(weight*pi)
+    invWeight = 1.0 - weight
     zWalking = 0
 
     for i in range(animationStart, animationEnd, fps):
@@ -42,11 +44,11 @@ def generateWalk():
                 
            #Feet   
                 rotationAmplitude = amplitude * extraAmpFactor
-                currentLeftFootTranslationX = amplitude * math.fabs(math.sin(0.5 * teta))   
+                currentLeftFootTranslationX = (amplitude / 3.0) * weight * math.fabs(math.sin(0.5 * teta))
                 currentRightFootTranslationX = currentLeftFootTranslationX - amplitude                
                 currentFootTranslationY = -amplitude * math.sin(teta) / asq
                 currentFootTranslationZ = amplitude * math.cos(teta) / bsq
-                currentLeftFootRotationX = -rotationAmplitude * math.sin(teta)
+                currentLeftFootRotationX = -rotationAmplitude * math.sin(teta) / 2.0
                 if (currentFootTranslationY < 0):
                     currentFootTranslationY = 0
                 if (currentLeftFootRotationX < 0):
@@ -57,19 +59,19 @@ def generateWalk():
              
             #Spine    
                 currentSpineTranslationX = currentLeftFootTranslationX - amplitude / 2.0                
-                currentSpineTranslationY = weightCosValue / 2.0 + math.sin(2 * teta) / asq
-                currentSpineRotationY = -direction * rotationAmplitude * math.cos(teta)
-                currentSpineRotationZ = weight * currentSpineRotationY
+                currentSpineTranslationY = (weightCosValue / 2.0) + invWeight * math.sin(2 * teta) / asq 
+                currentSpineRotationY = -weight * rotationAmplitude * math.cos(teta)
+                currentSpineRotationZ = currentSpineRotationY / 3.0
                 currentTailRotationY = currentSpineRotationY / 2.0
                 
             #Neck
                 currentNeckTranslationY = -currentSpineTranslationY / 2.0
                 currentNeckRotationY = -currentSpineRotationY 
                 currentNeckTranslationX = currentNeckRotationY / (extraAmpFactor * 2)
-                currentSpine1RotationZ = currentNeckRotationY / asq
+               # currentSpine1RotationZ = currentNeckRotationY / 3.0
                 
             #Master control
-                zWalking = zWalking + speed * amplitude / 2.0
+                zWalking = zWalking + speed * amplitude / asq
                 xWalking = amplitude * direction * math.sin(teta)
                 yWalkingRotation = rotationAmplitude * xWalking
                 
@@ -124,8 +126,8 @@ def generateWalk():
                 cmds.setKeyframe( 'Spine2_CTRL', attribute='translateY', t=tLeft) 
                 cmds.setAttr('Spine2_CTRL.rotateY',  currentNeckRotationY)
                 cmds.setKeyframe( 'Spine2_CTRL', attribute='rotateY', t=tLeft) 
-                cmds.setAttr('Spine1_CTRL.rotateZ',  currentSpine1RotationZ)
-                cmds.setKeyframe( 'Spine1_CTRL', attribute='rotateZ', t=tLeft)
+               # cmds.setAttr('Spine1_CTRL.rotateZ',  currentSpine1RotationZ)
+               # cmds.setKeyframe( 'Spine1_CTRL', attribute='rotateZ', t=tLeft)
                 
             #Forward walking
                 cmds.setAttr('Duck_Master_CTRL.translateZ', zWalking)
@@ -178,12 +180,13 @@ def normalizeGUIValues():
     speed = (speed - minValue)/minMaxDiff2
 
     global asq
-    if (weight < maxValue/3):
+    if (weight < maxValue/4):
         asq = 1
-    elif (weight < 2*maxValue):
+    elif (weight < 3*maxValue/4):
         asq=2
     elif (weight < maxValue):
         asq=3
+        
     global weight    
     weight = (weight - minValue)/minMaxDiff1   
     global direction
@@ -210,16 +213,16 @@ def createGUI():
     cmds.separator(height = 20)
     
    #Create general parameters
-    widgets['startFrame'] = cmds.intFieldGrp( numberOfFields=1, label='Animation Start Frame ')
-    widgets['endFrame'] = cmds.intFieldGrp( numberOfFields=1, label='Animation End Frame ')
-    widgets['FPS'] = cmds.intFieldGrp( numberOfFields=1, label='Frames per Seconds ')
+    widgets['startFrame'] = cmds.intFieldGrp( numberOfFields=1, label='Animation Start Frame ', value1 = animationStart)
+    widgets['endFrame'] = cmds.intFieldGrp( numberOfFields=1, label='Animation End Frame ', value1 = animationEnd)
+    widgets['FPS'] = cmds.intFieldGrp( numberOfFields=1, label='Frames per Seconds ', value1 = fps)
     
     cmds.separator(height = 20)
     defaultValue = maxValue/2   
     widgets['amplitude'] = cmds.floatSliderGrp( label = 'Amplitude', min = minValue, max = maxValue, value = defaultValue, field=True )
-    widgets['speed'] = cmds.floatSliderGrp( label='Speed ', min = minValue, max = maxValue, value = 1.0, field=True )
+    widgets['speed'] = cmds.floatSliderGrp( label='Speed ', min = minValue, max = maxValue, value = defaultValue, field=True )
     widgets['weight'] = cmds.floatSliderGrp( label='Weight ', min = minValue, max = maxValue, value = defaultValue, field=True )
-    widgets['direction'] = cmds.floatSliderGrp( label='Direction ', min = minValue, max = maxValue, value = defaultValue, field=True )
+    widgets['direction'] = cmds.floatSliderGrp( label='Direction ', min = minValue, max = maxValue, value = 0, field=True )
     
     cmds.separator(height = 20)
     
@@ -231,5 +234,4 @@ def createGUI():
     #Show GUI 
     cmds.showWindow(widgets['window'])
     
-createGUI()
-    
+createGUI()    
