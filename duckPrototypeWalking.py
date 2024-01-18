@@ -180,6 +180,7 @@ def normalizeGUIValues():
     speed = (speed - minValue)/minMaxDiff2
 
     global asq
+    global weight  
     if (weight < maxValue/4):
         asq = 1
     elif (weight < 3*maxValue/4):
@@ -187,7 +188,6 @@ def normalizeGUIValues():
     elif (weight < maxValue):
         asq=3
         
-    global weight    
     weight = (weight - minValue)/minMaxDiff1   
     global direction
     direction = (direction - minValue)/minMaxDiff1
