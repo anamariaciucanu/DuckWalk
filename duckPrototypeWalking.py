@@ -158,7 +158,7 @@ def getGUIValues():
     direction = cmds.floatSliderGrp(widgets['direction'], q = True, v = True)
     
     #Check timing values
-    if (tempAnimationStartFrame[0] > 0 and tempAnimationStartFrame <= tempAnimationEndFrame[0]):
+    if (tempAnimationStartFrame[0] > 0 and tempAnimationStartFrame[0] <= tempAnimationEndFrame[0]):
         global animationStart
         animationStart = tempAnimationStartFrame[0]
     if (tempAnimationEndFrame[0] > animationStart):
@@ -186,8 +186,8 @@ def normalizeGUIValues():
     elif (weight < 3*maxValue/4):
         asq=2
     elif (weight < maxValue):
-        asq=3
-        
+        asq=3        
+     
     weight = (weight - minValue)/minMaxDiff1   
     global direction
     direction = (direction - minValue)/minMaxDiff1
